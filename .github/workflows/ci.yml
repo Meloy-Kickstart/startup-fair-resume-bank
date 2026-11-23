@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: resume_bank_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/resume_bank_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Syntax check
+        run: for f in *.js public/*.js; do node --check "$f"; done
+      - name: End-to-end tests
+        run: npm test
+
+  deploy:
+    # Deploy to Render only after the tests pass on main.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::RENDER_DEPLOY_HOOK_URL secret is not set, so no deploy was triggered."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK" > /dev/null && echo "Render deploy triggered."
+      - name: Wait for the new version and check health
+        env:
+          APP_URL: ${{ vars.APP_URL }}
+        run: |
+          [ -z "$APP_URL" ] && { echo "APP_URL variable not set; skipping health check."; exit 0; }
+          sleep 60
+          for i in $(seq 1 30); do
+            if curl -fsS "$APP_URL/healthz" > /dev/null; then echo "Live: $APP_URL"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::$APP_URL/healthz did not answer after deploy"; exit 1
