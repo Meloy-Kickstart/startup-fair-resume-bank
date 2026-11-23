@@ -2,7 +2,9 @@ import pg from 'pg';
 import crypto from 'node:crypto';
 
 const url = process.env.DATABASE_URL || 'postgres://localhost:5432/resume_bank';
-const local = ['localhost', '127.0.0.1', ''].includes(new URL(url).hostname) || process.env.PGSSL === 'off';
+const host = new URL(url).hostname;
+// No SSL for local Postgres or Render's internal network (host names without a dot, e.g. dpg-xxx-a).
+const local = ['localhost', '127.0.0.1', ''].includes(host) || !host.includes('.') || process.env.PGSSL === 'off';
 
 export const pool = new pg.Pool({
   connectionString: url,
@@ -62,8 +64,18 @@ create table if not exists events (
 create index if not exists events_kind_idx on events (kind);
 `;
 
-export async function init() {
-  await pool.query(SCHEMA);
+/** Create tables. Retry for about a minute, because a new database can start after the app. */
+export async function init(tries = 20) {
+  for (let i = 1; ; i++) {
+    try {
+      await pool.query(SCHEMA);
+      return;
+    } catch (err) {
+      if (i >= tries) throw err;
+      console.error(`Database not ready (${err.code || err.message}); retry ${i}/${tries - 1} in 3 s`);
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
 }
 
 export const randomToken = (bytes = 18) => crypto.randomBytes(bytes).toString('base64url');
