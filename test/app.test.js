@@ -176,3 +176,13 @@ test('staff can delete a student', async () => {
   const after = await (await get(`/c/${COMPANY}/api/students?q=evil`)).json();
   assert.equal(after.students.length, 0);
 });
+
+test('staff can delete a company registration', async () => {
+  const before = await (await get(`/a/${ADMIN}/export/registrations.csv`)).text();
+  assert.match(before, /Aggie Drones/);
+  const page = await (await get(`/a/${ADMIN}`)).text();
+  const id = page.match(/\/registrations\/(\d+)\/delete/)[1];
+  assert.equal((await post(`/a/${ADMIN}/registrations/${id}/delete`, form({}))).status, 303);
+  const after = await (await get(`/a/${ADMIN}/export/registrations.csv`)).text();
+  assert.ok(!after.includes('Aggie Drones'));
+});

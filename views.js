@@ -156,6 +156,7 @@ export function admin({ token, links, stats, students, registrations, clicks, co
   <td><small>${h(r.roles || '')}</small></td>
   <td><small>${h(r.dietary || '')}</small></td>
   <td><small>${h(fmtDate(r.updated_at))}</small></td>
+  <td class="row-actions"><form method="post" action="/a/${t}/registrations/${r.id}/delete" class="confirm" data-confirm="Delete the registration for ${h(r.company)}? This cannot be undone."><button class="link danger" type="submit">Delete</button></form></td>
 </tr>`,
     )
     .join('');
@@ -212,8 +213,8 @@ export function admin({ token, links, stats, students, registrations, clicks, co
 
 <h2 class="section-title">Registered companies (${registrations.length})</h2>
 <div class="card table-wrap"><table>
-<thead><tr><th>Company</th><th>Contact</th><th>People coming</th><th>Majors wanted</th><th>Dietary</th><th>Registered</th></tr></thead>
-<tbody>${registrationRows || '<tr><td colspan="6" class="muted">No registrations yet.</td></tr>'}</tbody></table></div>
+<thead><tr><th>Company</th><th>Contact</th><th>People coming</th><th>Majors wanted</th><th>Dietary</th><th>Registered</th><th></th></tr></thead>
+<tbody>${registrationRows || '<tr><td colspan="7" class="muted">No registrations yet.</td></tr>'}</tbody></table></div>
 
 <h2 class="section-title">Students (${students.length})</h2>
 <div class="card table-wrap"><table>

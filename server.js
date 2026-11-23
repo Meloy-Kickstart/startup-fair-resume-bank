@@ -367,6 +367,12 @@ adminRouter.post('/students/:id/delete', async (req, res) => {
   res.redirect(303, `/a/${encodeURIComponent(req.params.token)}`);
 });
 
+adminRouter.post('/registrations/:id/delete', async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isInteger(id)) await pool.query('delete from registrations where id = $1', [id]);
+  res.redirect(303, `/a/${encodeURIComponent(req.params.token)}`);
+});
+
 adminRouter.get('/resume/:id', (req, res) => sendResume(req, res));
 
 const ADMIN_STUDENT_CSV = [
