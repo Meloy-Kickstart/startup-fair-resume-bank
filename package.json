@@ -1,0 +1,23 @@
+{
+  "name": "startup-fair-resume-bank",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Resume bank and check-in for the Meloy Kickstart Startup Career Fair at Texas A&M",
+  "type": "module",
+  "main": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch --env-file-if-exists=.env server.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "archiver": "7.0.1",
+    "express": "5.1.0",
+    "multer": "2.0.2",
+    "pg": "8.16.3",
+    "qrcode": "1.5.4"
+  }
+}

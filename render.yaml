@@ -1,0 +1,27 @@
+# Render Blueprint. Free web service + free Postgres.
+# Note: a free Render Postgres database expires 30 days after it is created. Upgrade it
+# (basic_256mb) or move DATABASE_URL to another Postgres before then.
+services:
+  - type: web
+    name: startup-fair-resume-bank
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: false # GitHub Actions deploys after the tests pass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: startup-fair-resume-bank-db
+          property: connectionString
+
+databases:
+  - name: startup-fair-resume-bank-db
+    plan: free
+    region: oregon
